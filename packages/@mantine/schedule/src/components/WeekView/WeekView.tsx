@@ -898,38 +898,45 @@ export const WeekView = factory<WeekViewFactory>((_props) => {
       : weekdays.findIndex((day) => dayjs(day).isSame(now, 'date'))
     : -1;
 
-  const weekdaysLabels = weekdays.map((day, dayIndex) => (
-    <UnstyledButton
-      {...getStyles('weekViewDayLabel')}
-      key={day}
-      ref={(node) => {
-        weekdaysRef.current[dayIndex] = node!;
-      }}
-      aria-label={`${getLabel('weekday', labels)} ${dayjs(day).format('YYYY-MM-DD')}`}
-      mod={{
-        today: dayjs(day).isSame(now, 'day') && !!highlightToday,
-        weekend: ctx.getWeekendDays(weekendDays).includes(dayjs(day).day() as DayOfWeek),
-        static: mode === 'static',
-      }}
-      tabIndex={mode === 'static' ? -1 : dayIndex === 0 ? 0 : -1}
-      onKeyDown={mode === 'static' ? undefined : (event) => handleWeekdayKeyDown(event, dayIndex)}
-      onClick={
-        mode === 'static'
-          ? undefined
-          : () => {
-              onViewChange?.('day');
-              onDateChange?.(toDateString(day));
-            }
-      }
-    >
-      <Box {...getStyles('weekViewDayWeekday')} key="weekday">
-        {formatDate({ locale: ctx.getLocale(locale), date: day, format: weekdayFormat })}
-      </Box>
-      <div {...getStyles('weekViewDayNumber')} key="date">
-        {dayjs(day).date()}
-      </div>
-    </UnstyledButton>
-  ));
+  const resolvedLocale = ctx.getLocale(locale);
+  const weekdaysLabels = weekdays.map((day, dayIndex) => {
+    const weekdayLabel = formatDate({ locale: resolvedLocale, date: day, format: weekdayFormat });
+    const dayNumber = dayjs(day).date();
+    const fullDateLabel = formatDate({ locale: resolvedLocale, date: day, format: 'MMMM D, YYYY' });
+
+    return (
+      <UnstyledButton
+        {...getStyles('weekViewDayLabel')}
+        key={day}
+        ref={(node) => {
+          weekdaysRef.current[dayIndex] = node!;
+        }}
+        aria-label={`${weekdayLabel} ${dayNumber}, ${fullDateLabel}`}
+        mod={{
+          today: dayjs(day).isSame(now, 'day') && !!highlightToday,
+          weekend: ctx.getWeekendDays(weekendDays).includes(dayjs(day).day() as DayOfWeek),
+          static: mode === 'static',
+        }}
+        tabIndex={mode === 'static' ? -1 : dayIndex === 0 ? 0 : -1}
+        onKeyDown={mode === 'static' ? undefined : (event) => handleWeekdayKeyDown(event, dayIndex)}
+        onClick={
+          mode === 'static'
+            ? undefined
+            : () => {
+                onViewChange?.('day');
+                onDateChange?.(toDateString(day));
+              }
+        }
+      >
+        <Box {...getStyles('weekViewDayWeekday')} key="weekday">
+          {weekdayLabel}
+        </Box>{' '}
+        <div {...getStyles('weekViewDayNumber')} key="date">
+          {dayNumber}
+        </div>
+      </UnstyledButton>
+    );
+  });
 
   const interactiveBackgroundEvents = withInteractiveBackgroundEvents && mode !== 'static';
 
